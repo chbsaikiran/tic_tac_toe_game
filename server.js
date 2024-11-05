@@ -1,5 +1,8 @@
 const WebSocket = require('ws');
-const server = new WebSocket.Server({ port: 8080 });
+const server = new WebSocket.Server({ 
+    port: 8080,
+    host: '0.0.0.0' // Add this line to accept connections from any IP
+});
 
 const games = new Map();
 
