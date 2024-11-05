@@ -6,7 +6,7 @@ class TicTacToe {
         this.pin = null;
         this.isHost = false;
         this.moveCount = 0;
-        this.ws = new WebSocket('ws://192.168.1.13:8080');
+        this.ws = new WebSocket('ws://addyourIPaddress:8080');
         this.setupWebSocket();
         this.setupEventListeners();
     }
