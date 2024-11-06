@@ -6,9 +6,13 @@ class TicTacToe {
         this.pin = null;
         this.isHost = false;
         this.moveCount = 0;
-        this.ws = new WebSocket('ws://addyourIPaddress:8080');
+        this.ws = new WebSocket('ws://192.168.1.13:8080');
         this.setupWebSocket();
         this.setupEventListeners();
+        this.scores = {
+            X: 0,
+            O: 0
+        };
     }
 
     setupEventListeners() {
@@ -73,6 +77,7 @@ class TicTacToe {
         document.getElementById('setup-screen').style.display = 'none';
         document.getElementById('game-screen').style.display = 'block';
         this.gameActive = true;
+        this.updateScoreDisplay();
         this.updateStatus();
     }
 
@@ -96,9 +101,14 @@ class TicTacToe {
     }
 
     handleRemoteMove(data) {
-        const { index, player, board, currentPlayer } = data;
+        const { index, player, board, currentPlayer, scores } = data;
         this.board = board;
         this.currentPlayer = currentPlayer;
+        
+        if (scores) {
+            this.scores = scores;
+            this.updateScoreDisplay();
+        }
         
         document.querySelectorAll('.cell')[index].textContent = player;
         this.moveCount++;
@@ -121,6 +131,12 @@ class TicTacToe {
         this.board = Array(9).fill('');
         this.moveCount = 0;
         this.gameActive = true;
+        
+        if (data.scores) {
+            this.scores = data.scores;
+            this.updateScoreDisplay();
+        }
+        
         document.querySelectorAll('.cell').forEach(cell => cell.textContent = '');
         document.getElementById('game-end-controls').style.display = 'none';
         this.updateStatus();
@@ -148,12 +164,9 @@ class TicTacToe {
     }
 
     restartGame() {
-        const startingPlayer = this.moveCount === 0 ? 'X' : 'O';
-        
         this.ws.send(JSON.stringify({
             type: 'RESTART_GAME',
-            pin: this.pin,
-            startingPlayer
+            pin: this.pin
         }));
     }
 
@@ -173,6 +186,11 @@ class TicTacToe {
         } else {
             status.textContent = "Opponent's turn";
         }
+    }
+
+    updateScoreDisplay() {
+        document.getElementById('x-score').textContent = this.scores.X;
+        document.getElementById('o-score').textContent = this.scores.O;
     }
 }
 

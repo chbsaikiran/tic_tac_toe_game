@@ -48,7 +48,12 @@ function handleCreateGame(ws, data) {
         player2: null,
         board: Array(9).fill(''),
         currentPlayer: 'X',
-        moveCount: 0
+        moveCount: 0,
+        lastStarter: 'X',
+        scores: {
+            X: 0,
+            O: 0
+        }
     });
 }
 
@@ -79,12 +84,20 @@ function handleMove(ws, data) {
     game.moveCount++;
     game.currentPlayer = game.currentPlayer === 'X' ? 'O' : 'X';
 
+    // Check for winner
+    const winner = checkWinner(game.board);
+    if (winner) {
+        // Update scores if there's a winner
+        game.scores[winner]++;
+    }
+
     const moveData = JSON.stringify({
         type: 'MOVE_MADE',
         index,
         player,
         currentPlayer: game.currentPlayer,
-        board: game.board
+        board: game.board,
+        scores: game.scores
     });
 
     game.player1.send(moveData);
@@ -95,13 +108,15 @@ function handleRestart(ws, data) {
     const game = games.get(data.pin);
     if (!game) return;
 
+    game.currentPlayer = game.lastStarter === 'X' ? 'O' : 'X';
+    game.lastStarter = game.currentPlayer;
     game.board = Array(9).fill('');
     game.moveCount = 0;
-    game.currentPlayer = data.startingPlayer;
 
     const restartData = JSON.stringify({
         type: 'GAME_RESTART',
-        currentPlayer: game.currentPlayer
+        currentPlayer: game.currentPlayer,
+        scores: game.scores  // Send current scores with restart
     });
 
     game.player1.send(restartData);
@@ -115,4 +130,21 @@ function handleEndGame(ws, data) {
     if (game.player1) game.player1.close();
     if (game.player2) game.player2.close();
     games.delete(data.pin);
+}
+
+// Add this helper function to check for winner
+function checkWinner(board) {
+    const winPatterns = [
+        [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+        [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
+        [0, 4, 8], [2, 4, 6] // Diagonals
+    ];
+
+    for (const pattern of winPatterns) {
+        const [a, b, c] = pattern;
+        if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+            return board[a];
+        }
+    }
+    return null;
 }
